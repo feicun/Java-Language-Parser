@@ -1,0 +1,324 @@
+options {
+  IGNORE_CASE=false;
+}
+
+PARSER_BEGIN(simplejava)
+
+public class simplejava {
+}
+
+PARSER_END(simplejava)
+
+TOKEN_MGR_DECLS : 
+{
+	public static int numcomments = 0;
+}
+
+
+SKIP :
+{
+    <  " " >
+|   <  "\n" >
+|   <  "\t" >
+|   <  "\r" >
+|   <  "\r\n" >
+|   <  "//" (~["\n"])* "\n" >
+|   <  "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")? >
+}
+
+SKIP :
+{
+    <  "/*" > {numcomments++;} : IN_COMMENT
+}
+
+< IN_COMMENT>
+SKIP :
+{
+    <  "/*" > {numcomments++;} : IN_COMMENT
+|   <  "*/" > {
+      numcomments--;
+      
+      if (numcomments == 0)
+        SwitchTo(DEFAULT);
+      else
+        SwitchTo(IN_COMMENT);
+    }
+|   <  ~[] >
+}
+
+TOKEN : 
+{
+    <  ELSE: "else"  >
+|   <  FOR: "for"  >
+|   <  CLASS: "class"  >
+|   <  DO: "do"  >
+|   <  FALSE: "false"  >
+|   <  TRUE: "true"  >
+|   <  IF: "if"  >
+|   <  WHILE: "while"  >
+|   <  RETURN : "return"  >
+|   <  NEW : "new"  >
+}
+
+
+TOKEN : 
+{
+    <  PLUS_PLUS : "++" >
+|   <  PLUS: "+"  >
+|   <  LEFT_SQUARE_BRACKET: "[" >
+|   <  RIGHT_SQUARE_BRACKET: "]" >
+|   <  LEFT_PARENTHESIS : "(" >
+|   <  RIGHT_PARENTHESIS : ")" >
+|   <  LEFT_BRACE : "{" >
+|   <  RIGHT_BRACE : "}" >
+|   <  DOT : "." >
+|   <  EQUALTO : "==" >
+|   <  ASSIGNMENTS : "=" >
+|   <  NOTEQUALTO : "!=" >
+|   <  NOT : "!" >
+|   <  LESS_THAN : "< " >
+|   <  MORE_THAN : " >" >
+|   <  LESS_THANOREQUALTO : "<=" >
+|   <  MORE_THANOREQUALTO : " >=" >
+|   <  OR : "||" >
+|   <  AND : "&&" >
+|   <  MINUS_MINUS : "--" >
+|   <  MINUS: "-" >
+|   <  MULTIPLE: "*" >
+|   <  DIVIDE: "/" >
+|   <  SEMICOLON: ";" >
+|   <  COMMA: "," >
+|   <  IDENTIFIER: ["a"-"z","A"-"Z"](["a"-"z","A"-"Z","0"-"9"])*  >
+|   <  INTEGER_LITERAL: (["0"-"9"])+  >
+}
+
+void program():
+{}
+{
+	(class_definition() | function())* < EOF >
+}
+
+void class_definition():
+{}
+{
+	< CLASS > < IDENTIFIER > < LEFT_BRACE > (variable_definition())+ < RIGHT_BRACE >
+}
+
+void array_dimension():
+{}
+{
+	(< LEFT_SQUARE_BRACKET > < RIGHT_SQUARE_BRACKET >)*
+}
+
+void variable_definition():
+{}
+{
+	< IDENTIFIER > < IDENTIFIER > array_dimension() < SEMICOLON >
+}
+
+void formal_parameter():
+{}
+{
+	< IDENTIFIER > < IDENTIFIER > array_dimension() (< COMMA > < IDENTIFIER > < IDENTIFIER > array_dimension())*
+}
+
+void function():
+{}
+{
+	< IDENTIFIER > < IDENTIFIER > < LEFT_PARENTHESIS > (formal_parameter())? < RIGHT_PARENTHESIS > (< SEMICOLON > | block_statement())?
+}
+
+void constant_expression():
+{}
+{
+	< INTEGER_LITERAL >
+|	boolean_constant()
+}
+
+void boolean_constant():
+{}
+{
+    < TRUE >
+|   < FALSE >
+}
+
+void functionCall():
+{}
+{
+	< IDENTIFIER > < LEFT_PARENTHESIS > (expression_list())? < RIGHT_PARENTHESIS >
+}
+
+void expression_list():
+{}
+{
+	expression() (< COMMA > expression())*
+}
+
+void variable():
+{}
+{
+	< IDENTIFIER > ((< LEFT_SQUARE_BRACKET > (expression())? < RIGHT_SQUARE_BRACKET >)*)
+}
+
+void class_variable():
+{}
+{
+	variable() (< DOT > variable())*
+}
+
+void expression():
+{}
+{
+	seventh_expression()
+}
+
+void seventh_expression():
+{}
+{
+	sixth_expression()  (< OR > sixth_expression() )*
+}
+
+void sixth_expression():
+{}
+{
+	fifth_expression() (< AND > fifth_expression() )*
+}
+
+void fifth_expression():
+{}
+{
+	(< NOT >)? fourth_expression()
+}
+
+void fourth_expression():
+{}
+{
+	third_expression() ( compare_operator() third_expression() )*
+}
+
+void third_expression():
+{ }
+{
+	second_expression() ( (< MULTIPLE > |  < DIVIDE >)  second_expression() )*
+}
+
+void second_expression():
+{ }
+{
+	factor() ((< PLUS > | < MINUS >)  factor())* 
+}
+
+void factor():
+{ }
+{
+  < MINUS > factor() 
+| < INTEGER_LITERAL > 
+| < LEFT_PARENTHESIS >  expression() < RIGHT_PARENTHESIS > 
+| LOOKAHEAD(2) functionCall()
+| boolean_constant()
+| class_variable()
+| new_expression()
+}
+
+
+void compare_operator():
+{}
+{
+    < LESS_THANOREQUALTO >
+|   < MORE_THANOREQUALTO >
+|   < EQUALTO >
+|   < NOTEQUALTO >
+|   < LESS_THAN >
+|   < MORE_THAN >
+}
+
+void new_expression():
+{}
+{
+	 < NEW > (LOOKAHEAD(2) (< IDENTIFIER > < LEFT_PARENTHESIS > (expression_list())? < RIGHT_PARENTHESIS >) |(< IDENTIFIER > ((< LEFT_SQUARE_BRACKET > (expression())? < RIGHT_SQUARE_BRACKET >)*)))
+}
+
+void assignment_statement():
+{}
+{
+	class_variable() < ASSIGNMENTS > expression() 
+}
+
+void PLUS_PLUS_statement():
+{}
+{
+	expression() (< PLUS_PLUS > | < MINUS_MINUS >) 
+}
+
+void statementList():
+{}
+{
+	(statement())*
+}
+
+void statement():
+{}
+{
+	LOOKAHEAD(2) variable_declaration_statement() < SEMICOLON >
+|	LOOKAHEAD(2) function_call_statement()
+|	LOOKAHEAD(2) assignment_statement() < SEMICOLON >
+|	PLUS_PLUS_statement() < SEMICOLON >
+|	block_statement()
+|	if_statement()
+|	while_statement()
+|	do_while_statement()
+|	for_statement()
+|	return_statement()
+}
+
+void variable_declaration_statement():
+{}
+{
+	< IDENTIFIER > class_variable() (< ASSIGNMENTS > expression())? 
+}
+
+void block_statement():
+{}
+{
+	< LEFT_BRACE > statementList() < RIGHT_BRACE >
+}
+
+void if_statement():
+{}
+{
+	< IF > < LEFT_PARENTHESIS > expression() < RIGHT_PARENTHESIS > statement() (LOOKAHEAD(2) < ELSE > statement())?
+}
+
+void while_statement():
+{}
+{
+	< WHILE > < LEFT_PARENTHESIS > expression() < RIGHT_PARENTHESIS > statement()
+}
+
+void do_while_statement():
+{}
+{
+	< DO > statement() < WHILE > < LEFT_PARENTHESIS > expression() < RIGHT_PARENTHESIS >
+}
+
+void for_statement():
+{}
+{
+	< FOR > < LEFT_PARENTHESIS > (LOOKAHEAD(2) variable_declaration_statement() 
+|	LOOKAHEAD(2) assignment_statement() 
+|	PLUS_PLUS_statement() )? < SEMICOLON > expression() < SEMICOLON > (LOOKAHEAD(2)  variable_declaration_statement() 
+|	LOOKAHEAD(2) assignment_statement() 
+|	PLUS_PLUS_statement() )? < RIGHT_PARENTHESIS > statement()
+}
+
+void return_statement():
+{}
+{
+	< RETURN > expression() < SEMICOLON >
+}
+
+void function_call_statement():
+{}
+{
+	< IDENTIFIER > < LEFT_PARENTHESIS > (expression_list())? < RIGHT_PARENTHESIS > < SEMICOLON >
+}

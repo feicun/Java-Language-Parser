@@ -1,0 +1,7 @@
+{ 
+  x = true;
+  while (x) {
+    w = y;
+    y = true;
+  }
+}

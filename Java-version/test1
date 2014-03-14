@@ -1,0 +1,10 @@
+{ x = true;
+  {  y = z;
+     w = carpark;
+  }
+  while (foolsgold) {
+     train = wreck;
+     while (parsnip)
+        cat = dog;
+  }
+}
