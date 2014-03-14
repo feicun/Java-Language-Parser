@@ -10,6 +10,6 @@ There has two version programs:
 
 I'm trying to imprve the JavaCC version.
 
-I includes some test files.
+Some test files including.
 
 To use JavaCC version, firstly the **simplejava.jj** file must be compiled by JavaCC, then use the **ParseTest.java** file to excute the generated Java code.
